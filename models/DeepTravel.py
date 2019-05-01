@@ -1,26 +1,20 @@
 import torch
 import torch.nn as nn
 
-from models.ShortLongTrafficFeatures import TrafficFeatureLSTM, ShortTermLSTM, LongTermLSTM
+from models.ShortLongTrafficFeatures import  ShortTermLSTM, LongTermLSTM
 from models.SpatialTemporal import SpatialTemporal
-from models.DrivingState import DrivingState
 
 
 class DeepTravel(nn.Module):
-    def __init__(self, kernel_size=3, num_filter=32, alpha=0.3):
+    def __init__(self, alpha=0.3):
         super(DeepTravel, self).__init__()
 
-        # parameter of attribute / spatio-temporal component
-        self.kernel_size = kernel_size
-        self.num_filter = num_filter
         self.alpha = alpha
-
         self.build()
         self.init_weight()
 
     def build(self):
         self.spatial_temporal = SpatialTemporal()
-        # self.driving_state = DrivingState()
         self.short_term_lstm = ShortTermLSTM()
         self.long_term_lstm = LongTermLSTM()
 
