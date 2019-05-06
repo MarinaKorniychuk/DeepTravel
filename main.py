@@ -13,12 +13,14 @@ def train(model, train_set, eval_set, dt_logger):
     if torch.cuda.is_available():
         model.cuda()
 
-        optimizer = torch.optim.Adam(model.parameters(), lr=2e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=2e-3)
 
     # for epoch in range(num_of_epochs):
-    model.train()
 
     for data_file in train_set:
+
+        model.train()
+
         data_iter = data_loader.get_loader(data_file, 10)
 
         running_loss = 0.0

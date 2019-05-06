@@ -88,10 +88,25 @@ def collate_fn(data, short_ttf, long_ttf, d_n=2):
             short[ind].append(ext_short)
             long[ind].append(ext_long)
 
+    short, long = form_ttf_vectors(short, long, temporal['time_bin'], temporal['day_bin'])
+
     return stats, temporal, spatial, dr_state, short, long
 
 
 def extract_ttf_for_cell(x_ind, y_ind, short, d_n, time_bin, long,  min_cl=12):
+    """
+    Aggregate short-term traffic features for one cell.
+    Use only close bins features (min_cl (closeness) is the biggest distance between time-bins)
+    Aggregate traffic features for each neighbour layer.
+
+    As the result:
+    {0 (layer): {time_bin: {features (av_speed, av_time, n)}, time_bin: {features},
+
+     1: {time_bin: {features}, time_bin: {features},
+     ...
+     n: {time_bin: {features}, time_bin: {features}
+    }
+    """
     short_ttf = {0: {}}
     long_ttf = {}
 
@@ -116,7 +131,7 @@ def extract_ttf_for_cell(x_ind, y_ind, short, d_n, time_bin, long,  min_cl=12):
         except IndexError:
             pass
     if long[x_ind][y_ind]:
-        long_ttf = long[x_ind][y_ind]
+        long_ttf = {int(day): features for day, features in long[x_ind][y_ind].items()}
 
     aggregate_short_ttf(short_ttf, time_bin)
 
@@ -124,6 +139,7 @@ def extract_ttf_for_cell(x_ind, y_ind, short, d_n, time_bin, long,  min_cl=12):
 
 
 def aggregate_short_ttf(short, time_bin, min_cl=12):
+    """Calculate average speed and time for time_bin according to traffic features from all cells."""
     for d_n in range(1, max(short.keys()) + 1):
         if len(short[d_n]) > 1:
             close_bins = collections.defaultdict(lambda: {'speed_sum': 0.0, 'time_sum': 0.0, 'n_sum': 0})
@@ -138,8 +154,10 @@ def aggregate_short_ttf(short, time_bin, min_cl=12):
             for bin, values in close_bins.items():
                 close_bins[bin]['speed'] = values['speed_sum'] / values['n_sum']
                 close_bins[bin]['time'] = values['time_sum'] / values['n_sum']
+                close_bins[bin]['n'] = values['n_sum']
                 del close_bins[bin]['speed_sum']
                 del close_bins[bin]['time_sum']
+                del close_bins[bin]['n_sum']
 
             short[d_n] = dict(close_bins)
         else:
@@ -150,7 +168,44 @@ def aggregate_short_ttf(short, time_bin, min_cl=12):
 
 
 def check_closeness(a_bin, b_bin, min_cl=12):
-    return (a_bin > b_bin and a_bin - b_bin <= min_cl) or (a_bin < b_bin and a_bin + 287 - b_bin <= min_cl)
+    return (a_bin >= b_bin and a_bin - b_bin <= min_cl) or (a_bin < b_bin and a_bin + 287 - b_bin <= min_cl)
+
+
+def form_ttf_vectors(short_ttf, long_ttf, time_bins, day_bins):
+    """For short ttf:
+            Collect traffic feature vectors for each separate layer in order closeness decreasing from 12 to 0 (current)
+       Long ttf:
+            Collect long traffic feature vectors in order closeness decreasing from 6 to 0 (current)
+    """
+    new_short = []
+    for ttf_seq, tbin_seq in zip(short_ttf, time_bins):
+        new_short.append({key: [] for key in short_ttf[0][0].keys()})
+        for ttf, cell_tbin in zip(ttf_seq, tbin_seq):
+            for layer in ttf.keys():
+                short_vectors = []
+                for tbin in sorted(ttf[layer]):
+                    short_vectors.append(torch.Tensor([
+                        int(cell_tbin) - tbin,
+                        ttf[layer][tbin]['speed'], ttf[layer][tbin]['time'],
+                        ttf[layer][tbin]['n']
+                    ]))
+                new_short[-1][layer].append(short_vectors)
+
+    new_long = []
+    for ttf_seq, day_seq in zip(long_ttf, day_bins):
+        long_for_batch = []
+        for ttf, cell_day in zip(ttf_seq, day_seq):
+            long_vectors = []
+            for day, features in ttf.items():
+                if int(cell_day) >= day:
+                    j_cl = int(cell_day) - day
+                else:
+                    j_cl = int(cell_day) - day + 7
+                long_vectors.append(torch.Tensor([j_cl, ttf[day]['speed'], ttf[day]['time'], ttf[day]['n']]))
+            long_for_batch.append(long_vectors)
+        new_long.append(long_for_batch)
+
+    return new_short, new_long
 
 
 class BatchSampler:

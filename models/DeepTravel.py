@@ -18,13 +18,13 @@ class DeepTravel(nn.Module):
         self.short_term_lstm = ShortTermLSTM()
         self.long_term_lstm = LongTermLSTM()
 
-    def evaluate(self, stats, temporal, spatial, dr_state, short_ttf=None, long_ttf=None):
+    def evaluate(self, stats, temporal, spatial, dr_state, short_ttf, long_ttf):
         self(stats, temporal, spatial, dr_state, short_ttf, long_ttf)
 
     def forward(self, stats, temporal, spatial, dr_state, short_ttf, long_ttf):
         V_sp, V_tp = self.spatial_temporal(stats, temporal, spatial)
 
-        V_dri = dr_state['dr_state']
+        V_dri = dr_state
 
         V_short = self.short_term_lstm(short_ttf)
         V_long = self.long_term_lstm(long_ttf)
@@ -34,4 +34,4 @@ class DeepTravel(nn.Module):
             if name.find('.bias') != -1:
                 param.data.fill_(0)
             elif name.find('.weight') != -1:
-                nn.init.uniform(param.data)
+                nn.init.uniform_(param.data)
