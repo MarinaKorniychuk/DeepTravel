@@ -179,19 +179,26 @@ def form_ttf_vectors(short_ttf, long_ttf, time_bins, day_bins):
        Long ttf:
             Collect long traffic feature vectors in order closeness decreasing from 6 to 0 (current)
     """
-    new_short = []
-    for ttf_seq, tbin_seq in zip(short_ttf, time_bins):
-        new_short.append({key: [] for key in short_ttf[0][0].keys()})
+    new_short = {}
+    for layer in short_ttf[0][0].keys():
+        new_short[layer] = [[] for _ in len(short_ttf)]
+
+    for ind, (ttf_seq, tbin_seq) in enumerate(zip(short_ttf, time_bins)):
         for ttf, cell_tbin in zip(ttf_seq, tbin_seq):
+            for key in new_short.keys():
+                new_short[key][ind].append([])
             for layer in ttf.keys():
                 short_vectors = []
                 for tbin in sorted(ttf[layer]):
-                    short_vectors.append(torch.Tensor([
+                    # generate vector R4 for each of 13 time-bins for the cell
+                    short_vectors.append([
                         int(cell_tbin) - tbin,
                         ttf[layer][tbin]['speed'], ttf[layer][tbin]['time'],
                         ttf[layer][tbin]['n']
-                    ]))
-                new_short[-1][layer].append(short_vectors)
+                    ])
+
+                # for each cell ttf has [13, 4] shape.
+                new_short[layer][ind][-1] = torch.Tensor(short_vectors)
 
     new_long = []
     for ttf_seq, day_seq in zip(long_ttf, day_bins):
@@ -203,8 +210,10 @@ def form_ttf_vectors(short_ttf, long_ttf, time_bins, day_bins):
                     j_cl = int(cell_day) - day
                 else:
                     j_cl = int(cell_day) - day + 7
-                long_vectors.append(torch.Tensor([j_cl, ttf[day]['speed'], ttf[day]['time'], ttf[day]['n']]))
-            long_for_batch.append(long_vectors)
+                long_vectors.append([j_cl, ttf[day]['speed'], ttf[day]['time'], ttf[day]['n']])
+
+            # for each cell ttf has [7, 4] shape.
+            long_for_batch.append(torch.Tensor(long_vectors))
         new_long.append(long_for_batch)
 
     return new_short, new_long
