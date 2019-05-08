@@ -88,6 +88,8 @@ def collate_fn(data, short_ttf, long_ttf, d_n=2):
             short[ind].append(ext_short)
             long[ind].append(ext_long)
 
+    fulfill_missed_ttf(short, long, temporal['time_bin'], temporal['day_bin'])
+
     short, long = form_ttf_vectors(short, long, temporal['time_bin'], temporal['day_bin'])
 
     return stats, temporal, spatial, dr_state, short, long
@@ -206,6 +208,24 @@ def form_ttf_vectors(short_ttf, long_ttf, time_bins, day_bins):
         new_long.append(long_for_batch)
 
     return new_short, new_long
+
+
+def fulfill_missed_ttf(short, long, time_bins, day_bins):
+
+    for short_path, long_path, time_bins_path, day_bin_path in zip(short, long, time_bins, day_bins):
+        for short_cell, long_cell, time_bin, day_bin in zip(short_path, long_path, time_bins_path, day_bin_path):
+            if time_bin - 12 >= 0:
+                close_time_bins = list(range(time_bin - 12, time_bin + 1))
+            else:
+                close_time_bins = list(range(0, time_bin + 1)) + list(range(time_bin - 12 + time_bin, 280))
+            for layer in range(max(short_cell.keys()) + 1):
+                for time_cl in close_time_bins:
+                    if not short_cell[layer].get(time_cl):
+                        short_cell[layer][time_cl] = {'speed': 0, 'time': 0, 'n': 0}
+
+            for day_cl in range(0, 7):
+                if not long_cell.get(day_cl):
+                    long_cell[day_cl] = {'speed': 0, 'time': 0, 'n': 0}
 
 
 class BatchSampler:
