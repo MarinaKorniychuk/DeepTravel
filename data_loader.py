@@ -181,7 +181,7 @@ def form_ttf_vectors(short_ttf, long_ttf, time_bins, day_bins):
     """
     new_short = {}
     for layer in short_ttf[0][0].keys():
-        new_short[layer] = [[] for _ in len(short_ttf)]
+        new_short[layer] = [[] for _ in range(len(short_ttf))]
 
     for ind, (ttf_seq, tbin_seq) in enumerate(zip(short_ttf, time_bins)):
         for ttf, cell_tbin in zip(ttf_seq, tbin_seq):
