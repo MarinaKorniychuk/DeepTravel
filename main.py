@@ -21,7 +21,7 @@ def train(model, train_set, eval_set, dt_logger):
 
         model.train()
 
-        data_iter = data_loader.get_loader(data_file, 10)
+        data_iter = data_loader.get_loader(data_file, 1)
 
         running_loss = 0.0
 
