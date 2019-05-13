@@ -179,42 +179,32 @@ def form_ttf_vectors(short_ttf, long_ttf, time_bins, day_bins):
        Long ttf:
             Collect long traffic feature vectors in order closeness decreasing from 6 to 0 (current)
     """
-    new_short = {}
-    for layer in short_ttf[0][0].keys():
-        new_short[layer] = [[] for _ in range(len(short_ttf))]
+    new_short = []
 
-    for ind, (ttf_seq, tbin_seq) in enumerate(zip(short_ttf, time_bins)):
-        for ttf, cell_tbin in zip(ttf_seq, tbin_seq):
-            for key in new_short.keys():
-                new_short[key][ind].append([])
-            for layer in ttf.keys():
-                short_vectors = []
-                for tbin in sorted(ttf[layer]):
-                    # generate vector R4 for each of 13 time-bins for the cell
-                    short_vectors.append([
-                        int(cell_tbin) - tbin,
-                        ttf[layer][tbin]['speed'], ttf[layer][tbin]['time'],
-                        ttf[layer][tbin]['n']
-                    ])
+    for ttf, cell_tbin in zip(short_ttf[0], time_bins[0]):
+        new_short.append([])
+        for layer in ttf.keys():
+            short_vectors = []
+            for tbin in sorted(ttf[layer]):
+                # generate vector R4 for not empy time-bins for the cell
+                short_vectors.append([
+                    int(cell_tbin) - tbin,
+                    ttf[layer][tbin]['speed'], ttf[layer][tbin]['time'],
+                    ttf[layer][tbin]['n']
+                ])
 
-                # for each cell ttf has [13, 4] shape.
-                new_short[layer][ind][-1] = torch.Tensor(short_vectors)
+            new_short[-1].append(torch.Tensor(short_vectors))
 
     new_long = []
-    for ttf_seq, day_seq in zip(long_ttf, day_bins):
-        long_for_batch = []
-        for ttf, cell_day in zip(ttf_seq, day_seq):
-            long_vectors = []
-            for day, features in ttf.items():
-                if int(cell_day) >= day:
-                    j_cl = int(cell_day) - day
-                else:
-                    j_cl = int(cell_day) - day + 7
-                long_vectors.append([j_cl, ttf[day]['speed'], ttf[day]['time'], ttf[day]['n']])
-
-            # for each cell ttf has [7, 4] shape.
-            long_for_batch.append(torch.Tensor(long_vectors))
-        new_long.append(long_for_batch)
+    for ttf, cell_day in zip(long_ttf[0], day_bins[0]):
+        long_vectors = []
+        for day, features in ttf.items():
+            if int(cell_day) >= day:
+                j_cl = int(cell_day) - day
+            else:
+                j_cl = int(cell_day) - day + 7
+            long_vectors.append([j_cl, ttf[day]['speed'], ttf[day]['time'], ttf[day]['n']])
+        new_long.append(torch.Tensor(long_vectors))
 
     return new_short, new_long
 
@@ -262,7 +252,7 @@ class BatchSampler:
         # re-arrange indices to minimize the padding
         for i in range(chunks):
             partial_indices = self.indices[i * chunk_size: (i + 1) * chunk_size]
-            partial_indices.sort(key = lambda x: self.lengths[x], reverse = True)
+            partial_indices.sort(key=lambda x: self.lengths[x], reverse=True)
             self.indices[i * chunk_size: (i + 1) * chunk_size] = partial_indices
 
         # yield batch
