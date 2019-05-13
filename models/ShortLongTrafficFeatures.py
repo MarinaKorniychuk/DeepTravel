@@ -49,5 +49,27 @@ class ShortTermLSTM(nn.Module):
 
         return V_short
 
-class LongTermLSTM(TrafficFeatureLSTM):
-    pass
+
+class LongTermLSTM(nn.Module):
+
+    def __init__(self, ):
+        super(LongTermLSTM, self).__init__()
+
+        self.rnn = nn.LSTM(
+            input_size=4,
+            hidden_size=100,
+            num_layers=1,
+            batch_first=True
+        )
+
+    def forward(self, long_ttf):
+
+        V_long = []
+
+        for cell in long_ttf:
+            input = torch.unsqueeze(cell, dim=0)
+            outputs, (h_n, c_n) = self.rnn(input)
+
+            V_long.append(torch.squeeze(outputs[:, -1], dim=0))
+
+        return V_long
