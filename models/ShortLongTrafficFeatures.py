@@ -7,21 +7,21 @@ class ShortTermLSTM(nn.Module):
     def __init__(self, ):
         super(ShortTermLSTM, self).__init__()
 
-        self.rnn_0 = nn.LSTM(
+        self.lstm_0 = nn.LSTM(
             input_size=4,
             hidden_size=100,
             num_layers=1,
             batch_first=True
         )
 
-        self.rnn_1 = nn.LSTM(
+        self.lstm_1 = nn.LSTM(
             input_size=4,
             hidden_size=100,
             num_layers=1,
             batch_first=True
         )
 
-        self.rnn_2 = nn.LSTM(
+        self.lstm_2 = nn.LSTM(
             input_size=4,
             hidden_size=100,
             num_layers=1,
@@ -34,14 +34,14 @@ class ShortTermLSTM(nn.Module):
 
         for cell in short_ttf:
 
-            input_0, input_1, input_2 = cell[0], cell[1], cell[2]
-            input_0 = torch.unsqueeze(input_0, dim=0)
-            input_1 = torch.unsqueeze(input_1, dim=0)
-            input_2 = torch.unsqueeze(input_2, dim=0)
+            inputs_0, inputs_1, inputs_2 = cell[0], cell[1], cell[2]
+            inputs_0 = torch.unsqueeze(inputs_0, dim=0)
+            inputs_1 = torch.unsqueeze(inputs_1, dim=0)
+            inputs_2 = torch.unsqueeze(inputs_2, dim=0)
 
-            outputs_0, (h_n, c_n) = self.rnn_0(input_0)
-            outputs_1, (h_n, c_n) = self.rnn_1(input_1)
-            outputs_2, (h_n, c_n) = self.rnn_2(input_2)
+            outputs_0, (h_n, c_n) = self.lstm_0(inputs_0)
+            outputs_1, (h_n, c_n) = self.lstm_1(inputs_1)
+            outputs_2, (h_n, c_n) = self.lstm_2(inputs_2)
 
             hiddens_v = torch.squeeze(torch.cat([outputs_0[:, -1], outputs_1[:, -1], outputs_2[:, -1]], dim=1), dim=0)
 
@@ -67,8 +67,8 @@ class LongTermLSTM(nn.Module):
         V_long = []
 
         for cell in long_ttf:
-            input = torch.unsqueeze(cell, dim=0)
-            outputs, (h_n, c_n) = self.rnn(input)
+            inputs = torch.unsqueeze(cell, dim=0)
+            outputs, (h_n, c_n) = self.rnn(inputs)
 
             V_long.append(torch.squeeze(outputs[:, -1], dim=0))
 
