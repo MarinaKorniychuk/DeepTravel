@@ -228,13 +228,17 @@ def fulfill_missed_ttf(short, long, time_bins, day_bins):
             else:
                 close_time_bins = list(range(0, time_bin + 1)) + list(range(time_bin - 12 + time_bin, 280))
             for layer in range(max(short_cell.keys()) + 1):
-                for time_cl in close_time_bins:
-                    if not short_cell[layer].get(time_cl):
-                        short_cell[layer][time_cl] = {'speed': 0, 'time': 0, 'n': 0}
+                # for time_cl in close_time_bins:
+                #     if not short_cell[layer].get(time_cl):
+                #         short_cell[layer][time_cl] = {'speed': 0, 'time': 0, 'n': 0}
+                if not short_cell[layer].get(time_bin):
+                    short_cell[layer][int(time_bin)] = {'speed': 0, 'time': 0, 'n': 0}
 
-            for day_cl in range(0, 7):
-                if not long_cell.get(day_cl):
-                    long_cell[day_cl] = {'speed': 0, 'time': 0, 'n': 0}
+            # for day_cl in range(0, 7):
+            #     if not long_cell.get(day_cl):
+            #         long_cell[day_cl] = {'speed': 0, 'time': 0, 'n': 0}
+            if not long_cell.get(int(0)):
+                long_cell[0] = {'speed': 0, 'time': 0, 'n': 0}
 
 
 class BatchSampler:
