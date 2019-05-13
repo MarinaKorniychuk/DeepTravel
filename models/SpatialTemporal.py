@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
 
-import utils
-
 
 class SpatialTemporal(nn.Module):
     """Generates feature vectors Vsp and Vtp for each particular cell"""
