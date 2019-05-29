@@ -6,14 +6,14 @@ class SpatialTemporal(nn.Module):
     """Generates feature vectors Vsp and Vtp for each particular cell"""
 
     spatial_emb_dims = [
-        ('G_X', 256, 5),
-        ('G_Y', 256, 5)
+        ('G_X', 256, 100),
+        ('G_Y', 256, 100)
     ]
 
     temporal_emb_dims = [
-        ('day_bin', 7, 3),
-        ('hour_bin', 24, 4),
-        ('time_bin', 287, 5)
+        ('day_bin', 7, 100),
+        ('hour_bin', 24, 100),
+        ('time_bin', 287, 100)
     ]
 
     def __init__(self):
@@ -28,6 +28,7 @@ class SpatialTemporal(nn.Module):
             if type(module) is not nn.Embedding:
                 continue
             nn.init.uniform_(module.state_dict()['weight'], a=-1, b=1)
+
     def forward(self, stats, temporal, spatial):
 
         V_tp = []
@@ -44,6 +45,6 @@ class SpatialTemporal(nn.Module):
             spatial_t = torch.squeeze(embed(spatial_t))
             V_sp.append(spatial_t)
 
-        V_tp = torch.cat(V_tp, dim=1) # length is batch_size * len(max_batch_path)
-        V_sp = torch.cat(V_sp, dim=1) # length is batch_size * len(max_batch_path)
+        V_tp = torch.cat(V_tp, dim=1)           # [300]
+        V_sp = torch.cat(V_sp, dim=1)           # [200]
         return V_sp, V_tp

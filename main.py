@@ -13,7 +13,7 @@ def train(model, train_set, eval_set, dt_logger):
     if torch.cuda.is_available():
         model.cuda()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=2e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     # for epoch in range(num_of_epochs):
 
@@ -25,18 +25,17 @@ def train(model, train_set, eval_set, dt_logger):
 
         running_loss = 0.0
 
-        for idx, (stats, temporal, spatial, dr_state, short_ttf, long_ttf) in enumerate(data_iter):
+        for idx, (stats, temporal, spatial, dr_state, short_ttf, long_ttf, helpers) in enumerate(data_iter):
 
             stats, temporal, spatial, dr_state = utils.to_var(stats), utils.to_var(temporal), utils.to_var(spatial), utils.to_var(dr_state)
             short_ttf, long_ttf = utils.to_var(short_ttf), utils.to_var(long_ttf)
 
-            model.evaluate(stats, temporal, spatial, dr_state, short_ttf, long_ttf)
+            loss = model.evaluate(stats, temporal, spatial, dr_state, short_ttf, long_ttf, helpers)
+            optimizer.zero_grad()
+            loss.sum().backward()
+            optimizer.step()
 
-            # optimizer.zero_grad()
-            # loss.backward()
-            # optimizer.step()
-
-            # running_loss += loss.data.item()
+            running_loss += loss.mean().data.item()
 
 
 def main():

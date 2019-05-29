@@ -20,8 +20,15 @@ class DeepTravel(nn.Module):
         self.short_term_lstm = ShortTermLSTM()
         self.long_term_lstm = LongTermLSTM()
 
-    def evaluate(self, stats, temporal, spatial, dr_state, short_ttf, long_ttf):
-        self(stats, temporal, spatial, dr_state, short_ttf, long_ttf)
+        self.prediction = PredictionBiLSTM()
+
+        self.linear = torch.nn.Linear(in_features=200, out_features=1)
+
+    def evaluate(self, stats, temporal, spatial, dr_state, short_ttf, long_ttf, helpers):
+        H_cells = self(stats, temporal, spatial, dr_state, short_ttf, long_ttf)
+        loss = self.dual_loss(H_cells, helpers['time_gap'], helpers['borders'], helpers['mask'])
+
+        return loss
 
     def forward(self, stats, temporal, spatial, dr_state, short_ttf, long_ttf):
         V_sp, V_tp = self.spatial_temporal(stats, temporal, spatial)    # [path_len, 10]; [path_len, 12]
@@ -32,9 +39,12 @@ class DeepTravel(nn.Module):
 
         V_cells = []
         for i in range(len(short_ttf)):
-            V_cells.append(torch.cat([V_sp[0], V_tp[0], V_dri[0], V_short[0], V_long[0]]))      # path_len x [426]
+            V_cells.append(torch.cat([V_sp[0], V_tp[0], V_dri[0], V_short[0], V_long[0]]))      # path_len x [904]
 
-        return V_cells
+        H_cells = self.prediction(V_cells)
+
+        return H_cells
+
     def dual_loss(self, H_cells, times, borders, mask):
 
         n = len(H_cells)
