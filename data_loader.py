@@ -41,6 +41,8 @@ def collate_fn(data, short_ttf, long_ttf, d_n=2):
     spatial_f = ['G_X', 'G_Y']
     driving_state = ['dr_state']
 
+    helpers_k = ['time_gap', 'borders', 'mask']
+
     stats, temporal, spatial = {}, {}, {}
 
     lens = np.asarray([len(item['G_X']) for item in data])
@@ -89,10 +91,13 @@ def collate_fn(data, short_ttf, long_ttf, d_n=2):
             long[ind].append(ext_long)
 
     fulfill_missed_ttf(short, long, temporal['time_bin'], temporal['day_bin'])
-
     short, long = form_ttf_vectors(short, long, temporal['time_bin'], temporal['day_bin'])
 
-    return stats, temporal, spatial, dr_state, short, long
+    helpers = {}
+    for key in helpers_k:
+        helpers[key] = data[0][key]
+
+    return stats, temporal, spatial, dr_state, short, long, helpers
 
 
 def extract_ttf_for_cell(x_ind, y_ind, short, d_n, time_bin, long,  min_cl=12):
@@ -222,13 +227,13 @@ def fulfill_missed_ttf(short, long, time_bins, day_bins):
                 #     if not short_cell[layer].get(time_cl):
                 #         short_cell[layer][time_cl] = {'speed': 0, 'time': 0, 'n': 0}
                 if not short_cell[layer].get(time_bin):
-                    short_cell[layer][int(time_bin)] = {'speed': 0, 'time': 0, 'n': 0}
+                    short_cell[layer][int(time_bin)] = {'speed': 27.238, 'time': 35.56, 'n': 1}
 
             # for day_cl in range(0, 7):
             #     if not long_cell.get(day_cl):
             #         long_cell[day_cl] = {'speed': 0, 'time': 0, 'n': 0}
             if not long_cell.get(int(0)):
-                long_cell[0] = {'speed': 0, 'time': 0, 'n': 0}
+                long_cell[0] = {'speed': 27.238, 'time': 35.56, 'n': 1}
 
 
 class BatchSampler:
