@@ -35,6 +35,46 @@ class DeepTravel(nn.Module):
             V_cells.append(torch.cat([V_sp[0], V_tp[0], V_dri[0], V_short[0], V_long[0]]))      # path_len x [426]
 
         return V_cells
+    def dual_loss(self, H_cells, times, borders, mask):
+
+        n = len(H_cells)
+
+        h_f = []
+        h_b = []
+
+        for i in range(1, n):
+            h_f.append(sum(H_cells[:i]))
+            h_b.append(sum(H_cells[i:]))
+
+        h_f.append(sum(H_cells))
+
+        T_f_hat = self.linear(torch.stack(h_f)).squeeze(dim=1)
+        T_b_hat = self.linear(torch.stack(h_b)).squeeze(dim=1)
+
+        T_b_hat = torch.cat([T_b_hat, torch.Tensor([0]).cuda()])
+
+        M = np.zeros(n)
+        T_f = np.ones(n)
+        T_b = np.ones(n)
+
+        for ind in range(len(H_cells)):
+            if not mask[ind]:
+                borders = np.insert(borders, ind, 0)
+            if mask[ind]:
+                M[ind] = 1
+                T_f[ind] = borders[ind]
+                T_b[ind] = times[-1] - borders[ind]
+
+        M = torch.Tensor(M).cuda()
+        T_f = torch.Tensor(T_f).cuda()
+        T_b = torch.Tensor(T_b).cuda()
+
+        loss = (M * ((T_f_hat - T_f) / T_f) ** 2 + M * ((T_b_hat - T_b) / T_b) ** 2) / (M * 2)
+
+        # Temporary forced operation
+        loss[loss != loss] = 0
+
+        return loss
 
     def init_weight(self):
         for name, param in self.named_parameters():
