@@ -1,8 +1,10 @@
 import torch
 import torch.nn as nn
+import numpy as np
 
 from models.ShortLongTrafficFeatures import  ShortTermLSTM, LongTermLSTM
 from models.SpatialTemporal import SpatialTemporal
+from models.PredictionBiLSTM import PredictionBiLSTM
 
 
 class DeepTravel(nn.Module):

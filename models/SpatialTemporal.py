@@ -24,6 +24,10 @@ class SpatialTemporal(nn.Module):
         for name, dim_in, dim_out in (SpatialTemporal.spatial_emb_dims + SpatialTemporal.temporal_emb_dims):
             self.add_module(name + '_em', nn.Embedding(dim_in, dim_out))
 
+        for module in self.modules():
+            if type(module) is not nn.Embedding:
+                continue
+            nn.init.uniform_(module.state_dict()['weight'], a=-1, b=1)
     def forward(self, stats, temporal, spatial):
 
         V_tp = []
